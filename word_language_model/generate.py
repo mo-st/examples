@@ -17,6 +17,8 @@ parser.add_argument('--checkpoint', type=str, default='./model.pt',
                     help='model checkpoint to use')
 parser.add_argument('--outf', type=str, default='generated.txt',
                     help='output file for generated text')
+parser.add_argument('--input', type=str, required=False, default='',
+                    help='input sequence to start the geration with')
 parser.add_argument('--words', type=int, default='1000',
                     help='number of words to generate')
 parser.add_argument('--seed', type=int, default=1111,
@@ -50,9 +52,24 @@ ntokens = len(corpus.dictionary)
 is_transformer_model = hasattr(model, 'model_type') and model.model_type == 'Transformer'
 if not is_transformer_model:
     hidden = model.init_hidden(1)
-input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
+
+if not args.input:
+    input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
+else:
+    startwords = args.input.split()
+    args.words -= len(args.input.split())
+    input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
+    for word in startwords:
+        try:
+            idx = corpus.dictionary.word2idx[word]
+            input.fill_(idx)
+        except KeyError:
+            raise KeyError(f"This input wasn't found in the dictionary of your model: '{word}'")
 
 with open(args.outf, 'w') as outf:
+    if args.input:
+        for word in startwords:
+            outf.write(word + ' ')
     with torch.no_grad():  # no tracking history
         for i in range(args.words):
             if is_transformer_model:
