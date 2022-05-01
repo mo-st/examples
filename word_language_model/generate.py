@@ -55,6 +55,8 @@ if not is_transformer_model:
 
 if not args.input:
     input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
+####################
+# Changes..
 else:
     startwords = args.input.split()
     args.words -= len(args.input.split())
@@ -70,6 +72,8 @@ with open(args.outf, 'w') as outf:
     if args.input:
         for word in startwords:
             outf.write(word + ' ')
+# ..until here
+#############################
     with torch.no_grad():  # no tracking history
         for i in range(args.words):
             if is_transformer_model:
